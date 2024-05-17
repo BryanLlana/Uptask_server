@@ -1,5 +1,7 @@
+import { Validators } from "../../config";
 import Task from "../../data/mongo/models/task.model";
 import { CreateTaskDto } from "../../domain/dto";
+import { CustomError } from "../../domain/errors";
 import { ProjectService } from "./project.service";
 
 export class TaskService {
@@ -34,5 +36,15 @@ export class TaskService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  public async getTaskOfProject (idProject: string, idTask: string) {
+    const project = await this.projectService.getProjectById(idProject)
+    if (!Validators.isMongoId(idTask)) throw CustomError.badRequest('Id de tarea no válida')
+    const task = await Task.findById(idTask)
+    if (!task) throw CustomError.notFound('Tarea no encontrada')
+    if (project.id !== task.project.toString()) throw CustomError.badRequest('Acción no válida')
+
+    return task
   }
 }
