@@ -26,7 +26,7 @@ export class ProjectService {
 
   public async getProjectById (id: string) {
     if (!Validators.isMongoId(id)) throw CustomError.badRequest('ID no válido')
-    const project = await Project.findById(id)
+    const project = await Project.findById(id).populate('tasks')
     if (!project) throw CustomError.notFound('Proyecto no encontrado')
     return project
   }

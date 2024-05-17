@@ -10,6 +10,7 @@ export class TaskRouter {
     const controller = new TaskController(taskService)
 
     router.post('/:projectId', controller.createTaskInProject)
+    router.get('/:projectId', controller.getTasksOfProject)
 
     return router
   }

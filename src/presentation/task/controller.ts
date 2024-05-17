@@ -25,4 +25,11 @@ export class TaskController {
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   } 
+
+  public getTasksOfProject = (req: Request, res: Response) => {
+    const { projectId } = req.params
+    this.taskService.getTasksOfProject(projectId)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
 }

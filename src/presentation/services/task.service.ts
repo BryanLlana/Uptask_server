@@ -21,4 +21,18 @@ export class TaskService {
       console.log(error);
     }
   }
+
+  public async getTasksOfProject (idProject: string) {
+    const project = await this.projectService.getProjectById(idProject)
+    try {
+      const tasks = await Task.find({
+        project: project.id
+      }).select({
+        updatedAt: 0
+      }).populate('project')
+      return tasks
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
