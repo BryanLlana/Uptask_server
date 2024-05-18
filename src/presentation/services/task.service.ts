@@ -47,4 +47,32 @@ export class TaskService {
 
     return task
   }
+
+  public async updateTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}) {
+    const task = await this.getTaskOfProject(idProject, idTask)
+    try {
+      task.name = values.name ?? task.name
+      task.description = values.description ?? task.description
+      await task.save()
+      return {
+        message: 'Tarea modificada correctamente'
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  public async deleteTaskOfProject (idProject: string, idTask: string) {
+    const task = await this.getTaskOfProject(idProject, idTask)
+    const project = await this.projectService.getProjectById(idProject)
+    try {
+      project.tasks = project.tasks.filter(taskState => taskState.toString() !== task._id.toString())
+      await Promise.allSettled([project.save(), task.deleteOne()])
+      return {
+        message: 'Tarea eliminada correctamente'
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
