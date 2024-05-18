@@ -14,6 +14,7 @@ export class TaskRouter {
     router.get('/:projectId/:taskId', controller.getTaskOfProject)
     router.put('/:projectId/:taskId', controller.updateTaskOfProject)
     router.delete('/:projectId/:taskId', controller.deleteTaskOfProject)
+    router.patch('/:projectId/:taskId', controller.updateStatusTaskOfProject)
 
     return router
   }

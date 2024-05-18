@@ -56,4 +56,14 @@ export class TaskController {
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
+
+  public updateStatusTaskOfProject = (req: Request, res: Response) => {
+    const { projectId, taskId } = req.params
+    const [errors, updateTaskDto] = UpdateTaskDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+
+    this.taskService.updateStatusTaskOfProject(projectId, taskId, updateTaskDto?.values!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
 }

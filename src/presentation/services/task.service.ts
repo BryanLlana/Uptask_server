@@ -75,4 +75,17 @@ export class TaskService {
       console.log(error);
     }
   }
+
+  public async updateStatusTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}) {
+    const task = await this.getTaskOfProject(idProject, idTask)
+    try {
+      task.status = values.status ?? task.status
+      await task.save()
+      return {
+        message: 'Estado actualizado correctamente'
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
