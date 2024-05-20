@@ -33,6 +33,21 @@ export class AuthService {
     }
   }
 
+  public async confirmAccount (token: string) {
+    const tokenExists = await Token.findOne({ token })
+    if (!tokenExists) throw CustomError.badRequest('Token no válido')
+    const user = await User.findById(tokenExists.user)
+    try {
+      user!.active = true
+      await Promise.allSettled([user?.save(), tokenExists.deleteOne()])
+      return {
+        message: 'Cuenta confirmada correctamente'
+      }
+    } catch (error) {
+      throw CustomError.internalServer('Internal server error')
+    }
+  }
+
   private async sendEmailValidationLink(user: IUser, token: IToken) {
     const link = `${envs.FRONTEND_URL}/auth/confirmar-cuenta`
     const html = `

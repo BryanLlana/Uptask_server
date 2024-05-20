@@ -15,6 +15,7 @@ export class AuthRoutes {
     const controller = new AuthController(service)
 
     router.post('/create-account', controller.createAccount)
+    router.post('/confirm-account', controller.confirmAccount)
 
     return router
   }
