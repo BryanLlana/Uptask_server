@@ -1,7 +1,8 @@
 import { envs } from "../../config";
+import { BcryptAdapter } from "../../config/adapter";
 import Token, { IToken } from "../../data/mongo/models/token.model";
 import User, { IUser } from '../../data/mongo/models/user.model';
-import { CreateAccountDto } from "../../domain/dto";
+import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto } from "../../domain/dto";
 import { CustomError } from "../../domain/errors";
 import { generateSixDigit } from "../../utils";
 import { EmailService } from "./email.service";
@@ -23,7 +24,7 @@ export class AuthService {
     token.user = user._id
 
     try {
-      this.sendEmailValidationLink(user, token)
+      await this.sendEmailValidationLink(user, token)
       await Promise.allSettled([user.save(), token.save()])
       return {
         message: 'Cuenta registrada, revisa tu email para confirmarla'
@@ -33,8 +34,8 @@ export class AuthService {
     }
   }
 
-  public async confirmAccount (token: string) {
-    const tokenExists = await Token.findOne({ token })
+  public async confirmAccount (confirmAccountDto: ConfirmAccountDto) {
+    const tokenExists = await Token.findOne({ token: confirmAccountDto.token })
     if (!tokenExists) throw CustomError.badRequest('Token no válido')
     const user = await User.findById(tokenExists.user)
     try {
@@ -48,8 +49,47 @@ export class AuthService {
     }
   }
 
+  public async requestNewCode (requestCodeDto: RequestCodeDto) {
+    const user = await User.findOne({ email: requestCodeDto.email }) as IUser
+    if (!user) throw CustomError.notFound('Email no registrado')
+    if (user.active) throw CustomError.badRequest('Este email ya está confirmado')
+
+    const token = new Token()
+    token.token = generateSixDigit()
+    token.user = user._id
+
+    try {
+      await this.sendEmailValidationLink(user, token)
+      await token.save()
+      return {
+        message: 'Hemos enviado un nuevo código a tu email'
+      }
+    } catch (error) {
+      throw CustomError.internalServer('Internal server error')
+    }
+  }
+
+  public async login(loginDto: LoginDto) {
+    const user = await User.findOne({ email: loginDto.email }) as IUser
+    if (!user) throw CustomError.unauthorized('Usuario no registrado')
+    if (!user.active) {
+      const token = new Token()
+      token.token = generateSixDigit()
+      token.user = user._id
+
+      this.sendEmailValidationLink(user, token)
+      await token.save()
+      throw CustomError.unauthorized('Usuario no confirmado, te hemos enviado un email de confirmación')
+    } 
+    if (!BcryptAdapter.compare(loginDto.password, user.password)) throw CustomError.unauthorized('Password incorrecto')
+    
+    return {
+      message: 'Autenticado correctamente'
+    }
+  }
+
   private async sendEmailValidationLink(user: IUser, token: IToken) {
-    const link = `${envs.FRONTEND_URL}/auth/confirmar-cuenta`
+    const link = `${envs.FRONTEND_URL}/auth/confirm-account`
     const html = `
       <div style="background-color: #ffffff; width: 90%; max-width: 600px; margin: 20px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
         <p style="font-family: Arial, sans-serif; font-size: 16px; color: #333; margin-bottom: 10px;">

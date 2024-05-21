@@ -16,6 +16,8 @@ export class AuthRoutes {
 
     router.post('/create-account', controller.createAccount)
     router.post('/confirm-account', controller.confirmAccount)
+    router.post('/login', controller.login)
+    router.post('/request-new-code', controller.requestNewCode)
 
     return router
   }

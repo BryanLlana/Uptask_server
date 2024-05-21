@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { CustomError } from "../../domain/errors"
-import { ConfirmAccountDto, CreateAccountDto } from "../../domain/dto"
+import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto } from "../../domain/dto"
 import { AuthService } from "../services"
 
 export class AuthController {
@@ -29,7 +29,25 @@ export class AuthController {
     const [errors, confirmAccountDto] = ConfirmAccountDto.create(req.body)
     if (errors) return res.status(400).json({ errors })
     
-    this.authService.confirmAccount(confirmAccountDto?.token!)
+    this.authService.confirmAccount(confirmAccountDto!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
+
+  public requestNewCode = (req: Request, res: Response) => {
+    const [errors, requestCodeDto] = RequestCodeDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+
+    this.authService.requestNewCode(requestCodeDto!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
+
+  public login = (req:Request, res: Response) => {
+    const [errors, loginDto] = LoginDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+
+    this.authService.login(loginDto!)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
