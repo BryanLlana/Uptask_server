@@ -18,6 +18,9 @@ export class AuthRoutes {
     router.post('/confirm-account', controller.confirmAccount)
     router.post('/login', controller.login)
     router.post('/request-new-code', controller.requestNewCode)
+    router.post('/forgot-password', controller.forgotPassword)
+    router.post('/validate-token', controller.validateToken)
+    router.post('/update-password/:token', controller.updatePassword)
 
     return router
   }

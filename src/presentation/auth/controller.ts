@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 import { CustomError } from "../../domain/errors"
-import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto } from "../../domain/dto"
+import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto, UpdatePasswordDto } from "../../domain/dto"
 import { AuthService } from "../services"
 
 export class AuthController {
@@ -39,6 +39,33 @@ export class AuthController {
     if (errors) return res.status(400).json({ errors })
 
     this.authService.requestNewCode(requestCodeDto!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
+
+  public forgotPassword = (req: Request, res: Response) => {
+    const [errors, requestCodeDto] = RequestCodeDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+    
+    this.authService.forgotPassword(requestCodeDto!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
+
+  public validateToken = (req: Request, res: Response) => {
+    const [errors, confirmAccountDto] = ConfirmAccountDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+
+    this.authService.validateToken(confirmAccountDto!)
+      .then(result => res.status(200).json(result))
+      .catch(error => this.handleError(error, res))
+  }
+
+  public updatePassword = (req: Request, res: Response) => {
+    const [errors, updatePasswordDto] = UpdatePasswordDto.create(req.body)
+    if (errors) return res.status(400).json({ errors })
+
+    this.authService.updatePassword(req.params.token, updatePasswordDto!)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }

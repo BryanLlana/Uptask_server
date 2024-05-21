@@ -2,7 +2,7 @@ import { envs } from "../../config";
 import { BcryptAdapter } from "../../config/adapter";
 import Token, { IToken } from "../../data/mongo/models/token.model";
 import User, { IUser } from '../../data/mongo/models/user.model';
-import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto } from "../../domain/dto";
+import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto, UpdatePasswordDto } from "../../domain/dto";
 import { CustomError } from "../../domain/errors";
 import { generateSixDigit } from "../../utils";
 import { EmailService } from "./email.service";
@@ -10,7 +10,7 @@ import { EmailService } from "./email.service";
 export class AuthService {
   constructor(
     private readonly emailService: EmailService
-  ) {}
+  ) { }
 
   public async createAccount(createAccountDto: CreateAccountDto) {
     const userExists = await User.findOne({ email: createAccountDto.email })
@@ -34,7 +34,7 @@ export class AuthService {
     }
   }
 
-  public async confirmAccount (confirmAccountDto: ConfirmAccountDto) {
+  public async confirmAccount(confirmAccountDto: ConfirmAccountDto) {
     const tokenExists = await Token.findOne({ token: confirmAccountDto.token })
     if (!tokenExists) throw CustomError.badRequest('Token no válido')
     const user = await User.findById(tokenExists.user)
@@ -49,7 +49,7 @@ export class AuthService {
     }
   }
 
-  public async requestNewCode (requestCodeDto: RequestCodeDto) {
+  public async requestNewCode(requestCodeDto: RequestCodeDto) {
     const user = await User.findOne({ email: requestCodeDto.email }) as IUser
     if (!user) throw CustomError.notFound('Email no registrado')
     if (user.active) throw CustomError.badRequest('Este email ya está confirmado')
@@ -69,6 +69,49 @@ export class AuthService {
     }
   }
 
+  public async forgotPassword(requestCodeDto: RequestCodeDto) {
+    const user = await User.findOne({ email: requestCodeDto.email }) as IUser
+    if (!user) throw CustomError.notFound('Email no registrado')
+
+    const token = new Token() as IToken
+    token.token = generateSixDigit()
+    token.user = user._id
+
+    try {
+      await this.sendEmailForgotPassword(user, token)
+      await token.save()
+      return {
+        message: 'Revisa tu email para ver las instrucciones'
+      }
+    } catch (error) {
+      throw CustomError.internalServer('Internal server error')
+    }
+  }
+
+  public async validateToken (confirmAccountDto: ConfirmAccountDto) {
+    const tokenExists = await Token.findOne({ token: confirmAccountDto.token })
+    if (!tokenExists) throw CustomError.badRequest('Token no válido')
+    return {
+      message: 'Token validado correctamente'
+    }
+  }
+
+  public async updatePassword (token: string, updatePassswordDto: UpdatePasswordDto) {
+    const tokenExists = await Token.findOne({ token })
+    if (!tokenExists) throw CustomError.badRequest('Token no válido')
+    const user = await User.findById(tokenExists.user)
+    user!.password = BcryptAdapter.hash(updatePassswordDto.password)
+
+    try {
+      await Promise.allSettled([tokenExists.deleteOne(), user!.save()])
+      return {
+        message: 'El password se modificó correctamente'
+      }
+    } catch (error) {
+      throw CustomError.internalServer('Internal server error')
+    }
+  }
+
   public async login(loginDto: LoginDto) {
     const user = await User.findOne({ email: loginDto.email }) as IUser
     if (!user) throw CustomError.unauthorized('Usuario no registrado')
@@ -80,9 +123,9 @@ export class AuthService {
       this.sendEmailValidationLink(user, token)
       await token.save()
       throw CustomError.unauthorized('Usuario no confirmado, te hemos enviado un email de confirmación')
-    } 
+    }
     if (!BcryptAdapter.compare(loginDto.password, user.password)) throw CustomError.unauthorized('Password incorrecto')
-    
+
     return {
       message: 'Autenticado correctamente'
     }
@@ -116,5 +159,36 @@ export class AuthService {
       htmlBody: html
     })
     if (!isSent) throw CustomError.internalServer('Error al enviar el email')
+  }
+
+  private async sendEmailForgotPassword(user: IUser, token: IToken) {
+    const link = `${envs.FRONTEND_URL}/auth/new-password`
+    const html = `
+      <div style="background-color: #ffffff; width: 90%; max-width: 600px; margin: 20px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+        <p style="font-family: Arial, sans-serif; font-size: 16px; color: #333; margin-bottom: 10px;">
+            Hola: ${user.name}, reestablece tu password en UpTask
+        </p>
+        <p style="font-family: Arial, sans-serif; font-size: 14px; color: #555; margin-bottom: 10px;">
+            Reestablece tu password en el siguiente enlace e ingresa el siguiente código: <b>${token.token}</b>
+        </p>
+        <p style="font-family: Arial, sans-serif; font-size: 14px; color: #555; margin-bottom: 10px;">
+            Este token expira en 10 minutos.
+        </p>
+        <a href="${link}" style="display: inline-block; padding: 10px 15px; background-color: #4CAF50; color: white; text-decoration: none; font-size: 16px; margin-top: 20px; border-radius: 5px; text-align: center;">
+            Reestablecer password
+        </a>
+        <p style="font-family: Arial, sans-serif; font-size: 14px; color: #555; margin-top: 20px; text-align: center;">
+            Si tú no hiciste esta acción, puedes ignorar este mensaje.
+        </p>
+      </div>
+    `
+
+    const isSent = await this.emailService.sendEmail({
+      to: user.email,
+      subject: 'UpTask - Reestablecer tu password',
+      htmlBody: html
+    })
+
+    if (!isSent) throw CustomError.internalServer('Error sending email')
   }
 }
