@@ -1,11 +1,13 @@
 import mongoose, { Schema, PopulatedDoc, Types, Document } from "mongoose"
 import { ITask } from "./task.model"
+import { IUser } from "./user.model"
 
 export interface IProject extends Document {
   name: string,
   customer: string,
   description: string,
-  tasks: PopulatedDoc<ITask & Document>[]
+  tasks: PopulatedDoc<ITask & Document>[],
+  manager: PopulatedDoc<IUser & Document>
 }
 
 const ProjectSchema: Schema = new mongoose.Schema({
@@ -29,7 +31,12 @@ const ProjectSchema: Schema = new mongoose.Schema({
       type: Types.ObjectId,
       ref: 'task'
     }
-  ]
+  ],
+  manager: {
+    type: Types.ObjectId,
+    required: true,
+    ref: 'user'
+  }
 }, {
   timestamps: true
 })

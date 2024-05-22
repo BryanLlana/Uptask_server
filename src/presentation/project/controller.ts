@@ -20,19 +20,19 @@ export class ProjectController {
     const [errors, createProjectDto] = CreateProjectDto.create(req.body)
     if (errors) return res.status(400).json({ errors })
     
-    this.projectService.createProject(createProjectDto!)
+    this.projectService.createProject(createProjectDto!, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
 
   public getAllProjects = (req: Request, res: Response) => {
-    this.projectService.getAllProjects()
+    this.projectService.getAllProjects(req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
 
   public getProjectById = (req: Request, res: Response) => {
-    this.projectService.getProjectById(req.params.id)
+    this.projectService.getProjectById(req.params.id, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
@@ -40,13 +40,13 @@ export class ProjectController {
   public updateProjectById = (req: Request, res: Response) => {
     const [errors, updateProjectDto] = UpdateProjectDto.create(req.body)
     if (errors) return res.status(400).json({ errors })
-    this.projectService.updateProjectById(req.params.id, updateProjectDto!.values)
+    this.projectService.updateProjectById(req.params.id, updateProjectDto!.values, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
 
   public deleteProjectById = (req: Request, res: Response) => {
-    this.projectService.deleteProjectById(req.params.id)
+    this.projectService.deleteProjectById(req.params.id, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }

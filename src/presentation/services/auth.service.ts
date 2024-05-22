@@ -1,5 +1,5 @@
 import { envs } from "../../config";
-import { BcryptAdapter } from "../../config/adapter";
+import { BcryptAdapter, JwtAdapter } from "../../config/adapter";
 import Token, { IToken } from "../../data/mongo/models/token.model";
 import User, { IUser } from '../../data/mongo/models/user.model';
 import { ConfirmAccountDto, CreateAccountDto, LoginDto, RequestCodeDto, UpdatePasswordDto } from "../../domain/dto";
@@ -126,8 +126,12 @@ export class AuthService {
     }
     if (!BcryptAdapter.compare(loginDto.password, user.password)) throw CustomError.unauthorized('Password incorrecto')
 
+    const token = await JwtAdapter.generateToken({ id: user._id })
+    if (!token) throw CustomError.internalServer('Error en el servidor')
+
     return {
-      message: 'Autenticado correctamente'
+      message: 'Autenticado correctamente',
+      token
     }
   }
 
