@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AuthController } from "./controller";
 import { AuthService, EmailService } from "../services";
 import { envs } from "../../config";
+import { AuthMiddleware } from "../middlewares";
 
 export class AuthRoutes {
   static get routes(): Router {
@@ -21,6 +22,7 @@ export class AuthRoutes {
     router.post('/forgot-password', controller.forgotPassword)
     router.post('/validate-token', controller.validateToken)
     router.post('/update-password/:token', controller.updatePassword)
+    router.get('/user', AuthMiddleware.validateJwt, controller.getUser)
 
     return router
   }

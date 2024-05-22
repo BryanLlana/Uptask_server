@@ -21,21 +21,21 @@ export class TaskController {
     const [errors, createTaskDto] = CreateTaskDto.create(req.body)
 
     if (errors) return res.status(400).json({ errors })
-    this.taskService.createTaskInProject(projectId, createTaskDto!)
+    this.taskService.createTaskInProject(projectId, createTaskDto!, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   } 
 
   public getTasksOfProject = (req: Request, res: Response) => {
     const { projectId } = req.params
-    this.taskService.getTasksOfProject(projectId)
+    this.taskService.getTasksOfProject(projectId, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
 
   public getTaskOfProject = (req: Request, res: Response) => {
     const { projectId, taskId } = req.params
-    this.taskService.getTaskOfProject(projectId, taskId)
+    this.taskService.getTaskOfProject(projectId, taskId, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
@@ -45,14 +45,14 @@ export class TaskController {
     const [errors, updateTaskDto] = UpdateTaskDto.create(req.body)
     if (errors) return res.status(400).json({ errors })
 
-    this.taskService.updateTaskOfProject(projectId, taskId, updateTaskDto?.values!)
+    this.taskService.updateTaskOfProject(projectId, taskId, updateTaskDto?.values!, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
 
   public deleteTaskOfProject = (req: Request, res: Response) => {
     const { projectId, taskId } = req.params
-    this.taskService.deleteTaskOfProject(projectId, taskId)
+    this.taskService.deleteTaskOfProject(projectId, taskId, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
@@ -62,7 +62,7 @@ export class TaskController {
     const [errors, updateTaskDto] = UpdateTaskDto.create(req.body)
     if (errors) return res.status(400).json({ errors })
 
-    this.taskService.updateStatusTaskOfProject(projectId, taskId, updateTaskDto?.values!)
+    this.taskService.updateStatusTaskOfProject(projectId, taskId, updateTaskDto?.values!, req.body.user)
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }

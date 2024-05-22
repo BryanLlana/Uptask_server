@@ -1,5 +1,6 @@
 import { Validators } from "../../config";
 import Task from "../../data/mongo/models/task.model";
+import { IUser } from "../../data/mongo/models/user.model";
 import { CreateTaskDto } from "../../domain/dto";
 import { CustomError } from "../../domain/errors";
 import { ProjectService } from "./project.service";
@@ -9,8 +10,8 @@ export class TaskService {
     private readonly projectService: ProjectService
   ){}
 
-  public async createTaskInProject (idProject: string, createTaskDto: CreateTaskDto) {
-    const project = await this.projectService.getProjectById(idProject)
+  public async createTaskInProject (idProject: string, createTaskDto: CreateTaskDto, user: IUser) {
+    const project = await this.projectService.getProjectById(idProject, user)
     try {
       const task = new Task(createTaskDto)
       task.project = idProject 
@@ -24,8 +25,8 @@ export class TaskService {
     }
   }
 
-  public async getTasksOfProject (idProject: string) {
-    const project = await this.projectService.getProjectById(idProject)
+  public async getTasksOfProject (idProject: string, user: IUser) {
+    const project = await this.projectService.getProjectById(idProject, user)
     try {
       const tasks = await Task.find({
         project: project.id
@@ -38,8 +39,8 @@ export class TaskService {
     }
   }
 
-  public async getTaskOfProject (idProject: string, idTask: string) {
-    const project = await this.projectService.getProjectById(idProject)
+  public async getTaskOfProject (idProject: string, idTask: string, user: IUser) {
+    const project = await this.projectService.getProjectById(idProject, user)
     if (!Validators.isMongoId(idTask)) throw CustomError.badRequest('Id de tarea no válida')
     const task = await Task.findById(idTask)
     if (!task) throw CustomError.notFound('Tarea no encontrada')
@@ -48,8 +49,8 @@ export class TaskService {
     return task
   }
 
-  public async updateTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}) {
-    const task = await this.getTaskOfProject(idProject, idTask)
+  public async updateTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}, user: IUser) {
+    const task = await this.getTaskOfProject(idProject, idTask, user)
     try {
       task.name = values.name ?? task.name
       task.description = values.description ?? task.description
@@ -62,9 +63,9 @@ export class TaskService {
     }
   }
 
-  public async deleteTaskOfProject (idProject: string, idTask: string) {
-    const task = await this.getTaskOfProject(idProject, idTask)
-    const project = await this.projectService.getProjectById(idProject)
+  public async deleteTaskOfProject (idProject: string, idTask: string, user: IUser) {
+    const task = await this.getTaskOfProject(idProject, idTask, user)
+    const project = await this.projectService.getProjectById(idProject, user)
     try {
       project.tasks = project.tasks.filter(taskState => taskState.toString() !== task._id.toString())
       await Promise.allSettled([project.save(), task.deleteOne()])
@@ -76,8 +77,8 @@ export class TaskService {
     }
   }
 
-  public async updateStatusTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}) {
-    const task = await this.getTaskOfProject(idProject, idTask)
+  public async updateStatusTaskOfProject (idProject: string, idTask: string, values: {[key: string]: any}, user: IUser) {
+    const task = await this.getTaskOfProject(idProject, idTask, user)
     try {
       task.status = values.status ?? task.status
       await task.save()

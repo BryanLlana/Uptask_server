@@ -78,4 +78,8 @@ export class AuthController {
       .then(result => res.status(200).json(result))
       .catch(error => this.handleError(error, res))
   }
+
+  public getUser = (req: Request, res: Response) => {
+    res.status(200).json(req.body.user)
+  }
 }
